@@ -1,24 +1,52 @@
 // src/app/generator/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 import CertificateCanvas from "@/components/certificate/canvas";
 import TextControls from "@/components/certificate/text-controls";
-import ImageControls from "@/components/certificate/image-controls";
-import TemplateSelector from "@/components/certificate/template-selector";
 import {
   TextElement,
   ImageElement,
   CertificateTemplate,
 } from "@/types/certificates";
+import {
+  Plus,
+  Image as ImageIcon,
+  Upload,
+  FileImage,
+  LogOut,
+} from "lucide-react";
+
+// Template constants
+const CERTIFICATE_WIDTH = 1200;
+const CERTIFICATE_HEIGHT = 850;
+
+const DEFAULT_TEMPLATES: CertificateTemplate[] = [
+  {
+    id: "template-1",
+    name: "Classic",
+    backgroundImage: "/certificates/template1.png",
+    width: CERTIFICATE_WIDTH,
+    height: CERTIFICATE_HEIGHT,
+  },
+  {
+    id: "template-2",
+    name: "Modern",
+    backgroundImage: "/certificates/template2.png",
+    width: CERTIFICATE_WIDTH,
+    height: CERTIFICATE_HEIGHT,
+  },
+];
 
 function GeneratorContent() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const templateInputRef = useRef<HTMLInputElement>(null);
 
   const [template, setTemplate] = useState<CertificateTemplate | null>(null);
   const [textElements, setTextElements] = useState<TextElement[]>([]);
@@ -59,6 +87,37 @@ function GeneratorContent() {
     setSelectedElementType("image");
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        addImageElement(imageUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        const newTemplate: CertificateTemplate = {
+          id: "custom-" + Date.now(),
+          name: "Custom",
+          backgroundImage: imageUrl,
+          width: CERTIFICATE_WIDTH,
+          height: CERTIFICATE_HEIGHT,
+        };
+        setTemplate(newTemplate);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const updateTextElement = (id: string, updates: Partial<TextElement>) => {
     setTextElements(
       textElements.map((el) => (el.id === id ? { ...el, ...updates } : el))
@@ -89,32 +148,168 @@ function GeneratorContent() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-zinc-800 shadow">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => router.push("/dashboard")}>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f9fafb",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Top Navigation Bar */}
+      <header
+        style={{
+          backgroundColor: "#ffffff",
+          borderBottom: "1px solid #e5e7eb",
+          boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "100%",
+            padding: "0.75rem 1.5rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "1rem",
+          }}
+        >
+          {/* Left: Back + Title */}
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/dashboard")}
+            >
               ← Back
             </Button>
-            <h1 className="text-2xl font-bold">Certificate Generator</h1>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>
+              Certificate Generator
+            </h1>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+
+          {/* Center: Quick Actions */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              flex: 1,
+              justifyContent: "center",
+            }}
+          >
+            {/* Template Selection */}
+            <div
+              style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
+            >
+              <span
+                style={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "#6b7280",
+                }}
+              >
+                Template:
+              </span>
+              {DEFAULT_TEMPLATES.map((t) => (
+                <Button
+                  key={t.id}
+                  variant={template?.id === t.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTemplate(t)}
+                >
+                  {t.name}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => templateInputRef.current?.click()}
+              >
+                <Upload className="w-4 h-4 mr-1" />
+                Custom
+              </Button>
+              <input
+                ref={templateInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleTemplateUpload}
+                style={{ display: "none" }}
+              />
+            </div>
+
+            <div
+              style={{
+                width: "1px",
+                height: "24px",
+                backgroundColor: "#e5e7eb",
+                margin: "0 0.5rem",
+              }}
+            />
+
+            {/* Add Elements */}
+            <Button size="sm" onClick={addTextElement} disabled={!template}>
+              <Plus className="w-4 h-4 mr-1" />
+              Add Text
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!template}
+            >
+              <ImageIcon className="w-4 h-4 mr-1" />
+              Add Image
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: "none" }}
+            />
+          </div>
+
+          {/* Right: User + Logout */}
+          <div
+            style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
+          >
+            <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
               {user?.name}
             </span>
-            <Button variant="outline" onClick={logout}>
+            <Button variant="ghost" size="sm" onClick={logout}>
+              <LogOut className="w-4 h-4 mr-1" />
               Logout
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main Content - NEW LAYOUT: Canvas on top, controls below */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Canvas Section - Full Width on Top */}
-        <div className="mb-6">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6">
+      {/* Main Content Area */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          overflow: "hidden",
+        }}
+      >
+        {/* Canvas Area - Left Side */}
+        <div
+          style={{
+            flex: 1,
+            overflow: "auto",
+            padding: "1.5rem",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "0.5rem",
+              boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+              padding: "1.5rem",
+              height: "100%",
+            }}
+          >
             {template ? (
               <CertificateCanvas
                 template={template}
@@ -129,13 +324,43 @@ function GeneratorContent() {
                 onUpdateImageElement={updateImageElement}
               />
             ) : (
-              <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-                <div className="text-center">
-                  <p className="text-gray-500 text-lg mb-2">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                  minHeight: "500px",
+                  border: "2px dashed #d1d5db",
+                  borderRadius: "0.5rem",
+                }}
+              >
+                <div style={{ textAlign: "center" }}>
+                  <FileImage
+                    style={{
+                      width: "64px",
+                      height: "64px",
+                      margin: "0 auto 1rem",
+                      color: "#9ca3af",
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontSize: "1.125rem",
+                      fontWeight: 500,
+                      color: "#6b7280",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
                     No template selected
                   </p>
-                  <p className="text-gray-400 text-sm">
-                    Select or upload a template below to start
+                  <p
+                    style={{
+                      fontSize: "0.875rem",
+                      color: "#9ca3af",
+                    }}
+                  >
+                    Select a template from the top bar to get started
                   </p>
                 </div>
               </div>
@@ -143,113 +368,187 @@ function GeneratorContent() {
           </div>
         </div>
 
-        {/* Controls Section - Three Columns Below Canvas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Template Selector */}
-          <div>
-            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4">
-              <h2 className="text-lg font-semibold mb-4">Template</h2>
-              <TemplateSelector
-                selectedTemplate={template}
-                onSelectTemplate={setTemplate}
-              />
-            </div>
+        {/* Properties Panel - Right Side */}
+        <div
+          style={{
+            width: "380px",
+            backgroundColor: "#ffffff",
+            borderLeft: "1px solid #e5e7eb",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              padding: "1rem 1.5rem",
+              borderBottom: "1px solid #e5e7eb",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "1rem",
+                fontWeight: 600,
+                margin: 0,
+              }}
+            >
+              {selectedTextElement
+                ? "Text Properties"
+                : selectedImageElement
+                ? "Image Properties"
+                : "Properties"}
+            </h2>
+            {(selectedTextElement || selectedImageElement) && (
+              <Button variant="destructive" size="sm" onClick={deleteElement}>
+                Delete
+              </Button>
+            )}
           </div>
 
-          {/* Middle Column - Add Elements */}
-          <div>
-            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4">
-              <h2 className="text-lg font-semibold mb-4">Add Elements</h2>
-              <div className="space-y-3">
-                <Button
-                  onClick={addTextElement}
-                  className="w-full"
-                  disabled={!template}
-                >
-                  + Add Text
-                </Button>
-                <ImageControls
-                  onAddImage={addImageElement}
-                  disabled={!template}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Element Properties */}
-          <div>
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "1.5rem",
+            }}
+          >
             {selectedTextElement ? (
-              <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Text Properties</h2>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={deleteElement}
-                  >
-                    Delete
-                  </Button>
-                </div>
-                <TextControls
-                  element={selectedTextElement}
-                  onUpdate={(updates) =>
-                    updateTextElement(selectedTextElement.id, updates)
-                  }
-                />
-              </div>
+              <TextControls
+                element={selectedTextElement}
+                onUpdate={(updates) =>
+                  updateTextElement(selectedTextElement.id, updates)
+                }
+              />
             ) : selectedImageElement ? (
-              <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Image Properties</h2>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={deleteElement}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "1rem",
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      marginBottom: "0.5rem",
+                    }}
                   >
-                    Delete
-                  </Button>
+                    Width (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={selectedImageElement.width}
+                    onChange={(e) =>
+                      updateImageElement(selectedImageElement.id, {
+                        width: parseInt(e.target.value) || 100,
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem 0.75rem",
+                      border: "2px solid #e5e7eb",
+                      borderRadius: "0.5rem",
+                      fontSize: "0.875rem",
+                    }}
+                  />
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Width
-                    </label>
-                    <input
-                      type="number"
-                      value={selectedImageElement.width}
-                      onChange={(e) =>
-                        updateImageElement(selectedImageElement.id, {
-                          width: parseInt(e.target.value),
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Height
-                    </label>
-                    <input
-                      type="number"
-                      value={selectedImageElement.height}
-                      onChange={(e) =>
-                        updateImageElement(selectedImageElement.id, {
-                          height: parseInt(e.target.value),
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
-                    />
-                  </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    Height (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={selectedImageElement.height}
+                    onChange={(e) =>
+                      updateImageElement(selectedImageElement.id, {
+                        height: parseInt(e.target.value) || 100,
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem 0.75rem",
+                      border: "2px solid #e5e7eb",
+                      borderRadius: "0.5rem",
+                      fontSize: "0.875rem",
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    backgroundColor: "#eff6ff",
+                    padding: "0.75rem",
+                    borderRadius: "0.5rem",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "#1e40af",
+                      margin: 0,
+                    }}
+                  >
+                    💡 <strong>Tip:</strong> Use images with transparent
+                    backgrounds (PNG) for best results
+                  </p>
                 </div>
               </div>
             ) : (
-              <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4">
-                <h2 className="text-lg font-semibold mb-4">Properties</h2>
-                <div className="text-center text-gray-500 py-8">
-                  <p className="text-sm">
-                    Select a text or image element to edit its properties
-                  </p>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "3rem 1rem",
+                  color: "#9ca3af",
+                }}
+              >
+                <div
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    margin: "0 auto 1rem",
+                    borderRadius: "50%",
+                    backgroundColor: "#f3f4f6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 2v20M2 12h20" />
+                  </svg>
                 </div>
+                <p
+                  style={{
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  No element selected
+                </p>
+                <p style={{ fontSize: "0.75rem" }}>
+                  Click on a text or image element in the canvas to edit its
+                  properties
+                </p>
               </div>
             )}
           </div>
