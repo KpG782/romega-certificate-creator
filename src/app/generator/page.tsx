@@ -1,7 +1,7 @@
 // src/app/generator/page.tsx
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import ProtectedRoute from "@/components/auth/protected-route";
@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import CertificateCanvas from "@/components/certificate/canvas";
 import TextControls from "@/components/certificate/text-controls";
 import BatchGenerator from "@/components/certificate/batch-generator";
+import GeneratorTour from "@/components/onboarding/generator-tour";
 import {
   TextElement,
   ImageElement,
@@ -21,9 +22,9 @@ import {
   FileImage,
   LogOut,
   Layers,
+  HelpCircle,
 } from "lucide-react";
 
-// Template constants
 const CERTIFICATE_WIDTH = 1200;
 const CERTIFICATE_HEIGHT = 850;
 
@@ -58,6 +59,25 @@ function GeneratorContent() {
     "text" | "image" | null
   >(null);
   const [activeTab, setActiveTab] = useState<"single" | "batch">("single");
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen generator tour
+    const hasSeenGeneratorTour = localStorage.getItem("hasSeenGeneratorTour");
+    if (!hasSeenGeneratorTour) {
+      const timer = setTimeout(() => setShowTour(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleTourComplete = () => {
+    setShowTour(false);
+    localStorage.setItem("hasSeenGeneratorTour", "true");
+  };
+
+  const handleShowTour = () => {
+    setShowTour(true);
+  };
 
   const addTextElement = () => {
     const newText: TextElement = {
@@ -159,6 +179,9 @@ function GeneratorContent() {
         flexDirection: "column",
       }}
     >
+      {/* Tour Overlay */}
+      {showTour && <GeneratorTour onComplete={handleTourComplete} />}
+
       {/* Top Navigation Bar */}
       <header
         style={{
@@ -204,6 +227,7 @@ function GeneratorContent() {
             {/* Template Selection */}
             <div
               style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
+              data-tour="template-selector"
             >
               <span
                 style={{
@@ -251,7 +275,12 @@ function GeneratorContent() {
             />
 
             {/* Add Elements */}
-            <Button size="sm" onClick={addTextElement} disabled={!template}>
+            <Button
+              size="sm"
+              onClick={addTextElement}
+              disabled={!template}
+              data-tour="add-text-btn"
+            >
               <Plus className="w-4 h-4 mr-1" />
               Add Text
             </Button>
@@ -260,6 +289,7 @@ function GeneratorContent() {
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
               disabled={!template}
+              data-tour="add-image-btn"
             >
               <ImageIcon className="w-4 h-4 mr-1" />
               Add Image
@@ -277,6 +307,15 @@ function GeneratorContent() {
           <div
             style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
           >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShowTour}
+              style={{ color: "#3b82f6" }}
+            >
+              <HelpCircle className="w-4 h-4 mr-1" />
+              Help
+            </Button>
             <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
               {user?.name}
             </span>
@@ -303,6 +342,7 @@ function GeneratorContent() {
             overflow: "auto",
             padding: "1.5rem",
           }}
+          data-tour="canvas-area"
         >
           <div
             style={{
@@ -314,18 +354,20 @@ function GeneratorContent() {
             }}
           >
             {template ? (
-              <CertificateCanvas
-                template={template}
-                textElements={textElements}
-                imageElements={imageElements}
-                selectedElement={selectedElement}
-                onSelectElement={(id, type) => {
-                  setSelectedElement(id);
-                  setSelectedElementType(type);
-                }}
-                onUpdateTextElement={updateTextElement}
-                onUpdateImageElement={updateImageElement}
-              />
+              <div data-tour="download-btn">
+                <CertificateCanvas
+                  template={template}
+                  textElements={textElements}
+                  imageElements={imageElements}
+                  selectedElement={selectedElement}
+                  onSelectElement={(id, type) => {
+                    setSelectedElement(id);
+                    setSelectedElementType(type);
+                  }}
+                  onUpdateTextElement={updateTextElement}
+                  onUpdateImageElement={updateImageElement}
+                />
+              </div>
             ) : (
               <div
                 style={{
@@ -381,6 +423,7 @@ function GeneratorContent() {
             flexDirection: "column",
             overflow: "hidden",
           }}
+          data-tour="properties-panel"
         >
           {/* Tab Switcher */}
           <div
@@ -426,6 +469,7 @@ function GeneratorContent() {
                 gap: "0.5rem",
                 transition: "all 0.2s",
               }}
+              data-tour="batch-tab"
             >
               <Layers className="w-4 h-4" />
               Batch Generation

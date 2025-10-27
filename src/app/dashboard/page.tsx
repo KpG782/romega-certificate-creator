@@ -1,22 +1,57 @@
 // src/app/dashboard/page.tsx
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
+import OnboardingTour from "@/components/onboarding/tour";
+import { HelpCircle } from "lucide-react";
 
 function DashboardContent() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen the tour before
+    const hasSeenTour = localStorage.getItem("hasSeenTour");
+    if (!hasSeenTour) {
+      // Show tour after a brief delay
+      const timer = setTimeout(() => setShowTour(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleTourComplete = () => {
+    setShowTour(false);
+    localStorage.setItem("hasSeenTour", "true");
+  };
+
+  const handleShowTour = () => {
+    setShowTour(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
+      {/* Onboarding Tour */}
+      {showTour && <OnboardingTour onComplete={handleTourComplete} />}
+
       {/* Header */}
       <header className="bg-white dark:bg-zinc-800 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">Certificate Generator</h1>
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShowTour}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Show Guide
+            </Button>
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Welcome, {user?.name}
             </span>
@@ -38,7 +73,10 @@ function DashboardContent() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6">
+          <div
+            className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6"
+            data-tour="create-new"
+          >
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
               <svg
                 className="w-6 h-6 text-blue-600"
