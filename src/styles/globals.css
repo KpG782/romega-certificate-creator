@@ -1,6 +1,23 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Local Merriweather fonts */
+@font-face {
+  font-family: "Merriweather";
+  src: url("/src/assets/fonts/Merriweather_24pt-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Merriweather";
+  src: url("/src/assets/fonts/Merriweather_24pt-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -43,72 +60,112 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ================================
+   ROMEGA SOLUTIONS COLOR SYSTEM
+   ================================ */
+
 :root {
   --radius: 0.625rem;
 
-  /* Converted from oklch to hex/rgb for html2canvas compatibility */
+  /* PRIMARY & ACCENT COLORS (Romega Solutions) */
+  --rs-primary-50: hsla(207, 77%, 95%, 1);
+  --rs-primary-100: hsla(209, 84%, 88%, 1);
+  --rs-primary-200: hsla(209, 89%, 78%, 1);
+  --rs-primary-300: hsla(209, 96%, 65%, 1);
+  --rs-primary-400: hsla(209, 100%, 55%, 1);
+  --rs-primary-500: hsla(209, 100%, 45%, 1);
+  --rs-primary-600: hsla(209, 80%, 35%, 1);
+  --rs-primary-700: hsla(209, 100%, 28%, 1);
+  --rs-primary-800: hsla(209, 100%, 23%, 1);
+  --rs-primary-900: hsla(209, 90%, 18%, 1);
+  --rs-primary-950: hsla(209, 70%, 12%, 1);
+
+  --rs-accent-50: hsla(42, 77%, 95%, 1);
+  --rs-accent-100: hsla(42, 100%, 88%, 1);
+  --rs-accent-200: hsla(42, 95%, 76%, 1);
+  --rs-accent-300: hsla(42, 95%, 62%, 1);
+  --rs-accent-400: hsla(42, 95%, 52%, 1);
+  --rs-accent-500: hsla(42, 94%, 45%, 1);
+  --rs-accent-600: hsla(42, 94%, 43%, 1);
+  --rs-accent-700: hsla(42, 94%, 38%, 1);
+  --rs-accent-800: hsla(42, 86%, 30%, 1);
+  --rs-accent-900: hsla(43, 76%, 18%, 1);
+  --rs-accent-950: hsla(42, 60%, 10%, 1);
+
+  --rs-neutral-50: hsla(208, 87%, 97%, 1);
+  --rs-neutral-100: hsla(209, 69%, 90%, 1);
+  --rs-neutral-200: hsla(209, 60%, 80%, 1);
+  --rs-neutral-300: hsla(209, 50%, 70%, 1);
+  --rs-neutral-400: hsla(209, 40%, 60%, 1);
+  --rs-neutral-500: hsla(209, 35%, 50%, 1);
+  --rs-neutral-600: hsla(209, 40%, 35%, 1);
+  --rs-neutral-700: hsla(209, 50%, 25%, 1);
+  --rs-neutral-800: hsla(208, 60%, 18%, 1);
+  --rs-neutral-900: hsla(209, 67%, 13%, 1);
+  --rs-neutral-950: hsla(208, 74%, 9%, 1);
+
+  /* SHADCN/UI THEME VARIABLES */
   --background: #ffffff;
   --foreground: #0a0a0a;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
   --popover: #ffffff;
   --popover-foreground: #0a0a0a;
-  --primary: #171717;
-  --primary-foreground: #fafafa;
+  --primary: hsl(209, 100%, 45%);
+  --primary-foreground: #ffffff;
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
   --muted: #f5f5f5;
   --muted-foreground: #737373;
-  --accent: #f5f5f5;
-  --accent-foreground: #171717;
+  --accent: hsl(42, 94%, 45%);
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --border: #e5e5e5;
   --input: #e5e5e5;
-  --ring: #a3a3a3;
-  --chart-1: #f97316;
-  --chart-2: #3b82f6;
+  --ring: hsl(209, 100%, 45%);
+  --chart-1: hsl(42, 94%, 45%);
+  --chart-2: hsl(209, 100%, 55%);
   --chart-3: #06b6d4;
   --chart-4: #84cc16;
   --chart-5: #eab308;
   --sidebar: #fafafa;
   --sidebar-foreground: #0a0a0a;
-  --sidebar-primary: #171717;
-  --sidebar-primary-foreground: #fafafa;
+  --sidebar-primary: hsl(209, 100%, 45%);
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f5f5f5;
   --sidebar-accent-foreground: #171717;
   --sidebar-border: #e5e5e5;
-  --sidebar-ring: #a3a3a3;
+  --sidebar-ring: hsl(209, 100%, 45%);
 }
 
 .dark {
-  /* Converted from oklch to hex/rgb for html2canvas compatibility */
   --background: #0a0a0a;
   --foreground: #fafafa;
   --card: #171717;
   --card-foreground: #fafafa;
   --popover: #171717;
   --popover-foreground: #fafafa;
-  --primary: #e5e5e5;
-  --primary-foreground: #171717;
+  --primary: hsl(209, 89%, 78%);
+  --primary-foreground: hsl(209, 100%, 28%);
   --secondary: #262626;
   --secondary-foreground: #fafafa;
   --muted: #262626;
   --muted-foreground: #a3a3a3;
-  --accent: #262626;
-  --accent-foreground: #fafafa;
+  --accent: hsl(42, 95%, 62%);
+  --accent-foreground: hsl(42, 60%, 10%);
   --destructive: #dc2626;
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.15);
   --ring: #737373;
-  --chart-1: #8b5cf6;
-  --chart-2: #10b981;
+  --chart-1: hsl(42, 94%, 45%);
+  --chart-2: hsl(209, 100%, 55%);
   --chart-3: #eab308;
   --chart-4: #a855f7;
   --chart-5: #f97316;
   --sidebar: #171717;
   --sidebar-foreground: #fafafa;
-  --sidebar-primary: #8b5cf6;
-  --sidebar-primary-foreground: #fafafa;
+  --sidebar-primary: hsl(209, 89%, 78%);
+  --sidebar-primary-foreground: hsl(209, 100%, 28%);
   --sidebar-accent: #262626;
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: rgba(255, 255, 255, 0.1);
@@ -118,8 +175,14 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-family: "Source Sans 3", sans-serif;
   }
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Force Merriweather for specific elements */
+.font-merriweather {
+  font-family: "Merriweather", serif !important;
 }
