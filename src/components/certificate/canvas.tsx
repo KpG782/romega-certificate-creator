@@ -8,7 +8,6 @@ import {
   TextElement,
   ImageElement,
 } from "@/types/certificates";
-import html2canvas from "html2canvas";
 
 interface CertificateCanvasProps {
   template: CertificateTemplate;
@@ -98,8 +97,9 @@ export default function CertificateCanvas({
   onUpdateTextElement,
   onUpdateImageElement,
 }: CertificateCanvasProps) {
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const displayRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -117,31 +117,69 @@ export default function CertificateCanvas({
     return () => window.removeEventListener("resize", updateScale);
   }, [template.width]);
 
+  // Load and draw image helper
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  };
+
   const handleDownload = async () => {
     if (!canvasRef.current) {
       alert("Canvas not ready");
       return;
     }
 
-    const previousSelection = selectedElement;
-    onSelectElement("", "text");
     setIsDownloading(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
     try {
-      const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        width: template.width,
-        height: template.height,
-        windowWidth: template.width,
-        windowHeight: template.height,
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Cannot get canvas context");
+
+      // Set canvas size
+      canvas.width = template.width;
+      canvas.height = template.height;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw template background
+      const templateImg = await loadImage(template.backgroundImage);
+      ctx.drawImage(templateImg, 0, 0, template.width, template.height);
+
+      // Draw image elements
+      for (const element of imageElements) {
+        const img = await loadImage(element.src);
+        ctx.drawImage(
+          img,
+          element.position.x,
+          element.position.y,
+          element.width,
+          element.height
+        );
+      }
+
+      // Draw text elements
+      textElements.forEach((element) => {
+        ctx.font = `${element.fontStyle} ${element.fontWeight} ${element.fontSize}px ${element.fontFamily}`;
+        ctx.fillStyle = element.color;
+        ctx.textAlign = element.textAlign as CanvasTextAlign;
+        ctx.textBaseline = "top";
+
+        // Handle multi-line text
+        const lines = element.text.split("\n");
+        lines.forEach((line, index) => {
+          const y = element.position.y + index * element.fontSize * 1.2;
+          ctx.fillText(line, element.position.x, y);
+        });
       });
 
+      // Download
       canvas.toBlob(
         (blob) => {
           if (blob) {
@@ -165,11 +203,6 @@ export default function CertificateCanvas({
       );
     } finally {
       setIsDownloading(false);
-      setTimeout(() => {
-        if (previousSelection) {
-          onSelectElement(previousSelection, "text");
-        }
-      }, 300);
     }
   };
 
@@ -188,6 +221,14 @@ export default function CertificateCanvas({
         </Button>
       </div>
 
+      {/* Hidden canvas for rendering */}
+      <canvas
+        ref={canvasRef}
+        style={{ display: "none" }}
+        width={template.width}
+        height={template.height}
+      />
+
       <div
         ref={containerRef}
         style={{
@@ -201,7 +242,7 @@ export default function CertificateCanvas({
         }}
       >
         <div
-          ref={canvasRef}
+          ref={displayRef}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               onSelectElement("", "text");
@@ -243,7 +284,7 @@ export default function CertificateCanvas({
                   textAlign: element.textAlign,
                   userSelect: "none",
                   whiteSpace: "pre-wrap",
-                  padding: "4px",
+                  lineHeight: "1.2",
                 }}
               >
                 {element.text}
