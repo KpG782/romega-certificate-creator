@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 import CertificateCanvas from "@/components/certificate/canvas";
 import TextControls from "@/components/certificate/text-controls";
+import BatchGenerator from "@/components/certificate/batch-generator";
 import {
   TextElement,
   ImageElement,
@@ -19,6 +20,7 @@ import {
   Upload,
   FileImage,
   LogOut,
+  Layers,
 } from "lucide-react";
 
 // Template constants
@@ -55,6 +57,7 @@ function GeneratorContent() {
   const [selectedElementType, setSelectedElementType] = useState<
     "text" | "image" | null
   >(null);
+  const [activeTab, setActiveTab] = useState<"single" | "batch">("single");
 
   const addTextElement = () => {
     const newText: TextElement = {
@@ -379,179 +382,252 @@ function GeneratorContent() {
             overflow: "hidden",
           }}
         >
+          {/* Tab Switcher */}
           <div
             style={{
-              padding: "1rem 1.5rem",
-              borderBottom: "1px solid #e5e7eb",
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              borderBottom: "1px solid #e5e7eb",
             }}
           >
-            <h2
+            <button
+              onClick={() => setActiveTab("single")}
               style={{
-                fontSize: "1rem",
-                fontWeight: 600,
-                margin: 0,
+                flex: 1,
+                padding: "0.75rem 1rem",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                border: "none",
+                backgroundColor: activeTab === "single" ? "#ffffff" : "#f9fafb",
+                color: activeTab === "single" ? "#1f2937" : "#6b7280",
+                borderBottom:
+                  activeTab === "single" ? "2px solid #3b82f6" : "none",
+                cursor: "pointer",
+                transition: "all 0.2s",
               }}
             >
-              {selectedTextElement
-                ? "Text Properties"
-                : selectedImageElement
-                ? "Image Properties"
-                : "Properties"}
-            </h2>
-            {(selectedTextElement || selectedImageElement) && (
-              <Button variant="destructive" size="sm" onClick={deleteElement}>
-                Delete
-              </Button>
-            )}
+              Single Certificate
+            </button>
+            <button
+              onClick={() => setActiveTab("batch")}
+              style={{
+                flex: 1,
+                padding: "0.75rem 1rem",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                border: "none",
+                backgroundColor: activeTab === "batch" ? "#ffffff" : "#f9fafb",
+                color: activeTab === "batch" ? "#1f2937" : "#6b7280",
+                borderBottom:
+                  activeTab === "batch" ? "2px solid #3b82f6" : "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                transition: "all 0.2s",
+              }}
+            >
+              <Layers className="w-4 h-4" />
+              Batch Generation
+            </button>
           </div>
 
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              padding: "1.5rem",
-            }}
-          >
-            {selectedTextElement ? (
-              <TextControls
-                element={selectedTextElement}
-                onUpdate={(updates) =>
-                  updateTextElement(selectedTextElement.id, updates)
-                }
-              />
-            ) : selectedImageElement ? (
+          {/* Tab Content */}
+          {activeTab === "single" ? (
+            <>
               <div
                 style={{
+                  padding: "1rem 1.5rem",
+                  borderBottom: "1px solid #e5e7eb",
                   display: "flex",
-                  flexDirection: "column",
-                  gap: "1rem",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    Width (px)
-                  </label>
-                  <input
-                    type="number"
-                    value={selectedImageElement.width}
-                    onChange={(e) =>
-                      updateImageElement(selectedImageElement.id, {
-                        width: parseInt(e.target.value) || 100,
-                      })
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem 0.75rem",
-                      border: "2px solid #e5e7eb",
-                      borderRadius: "0.5rem",
-                      fontSize: "0.875rem",
-                    }}
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    Height (px)
-                  </label>
-                  <input
-                    type="number"
-                    value={selectedImageElement.height}
-                    onChange={(e) =>
-                      updateImageElement(selectedImageElement.id, {
-                        height: parseInt(e.target.value) || 100,
-                      })
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem 0.75rem",
-                      border: "2px solid #e5e7eb",
-                      borderRadius: "0.5rem",
-                      fontSize: "0.875rem",
-                    }}
-                  />
-                </div>
-                <div
+                <h2
                   style={{
-                    backgroundColor: "#eff6ff",
-                    padding: "0.75rem",
-                    borderRadius: "0.5rem",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    margin: 0,
                   }}
                 >
-                  <p
-                    style={{
-                      fontSize: "0.75rem",
-                      color: "#1e40af",
-                      margin: 0,
-                    }}
+                  {selectedTextElement
+                    ? "Text Properties"
+                    : selectedImageElement
+                    ? "Image Properties"
+                    : "Properties"}
+                </h2>
+                {(selectedTextElement || selectedImageElement) && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={deleteElement}
                   >
-                    💡 <strong>Tip:</strong> Use images with transparent
-                    backgrounds (PNG) for best results
-                  </p>
-                </div>
+                    Delete
+                  </Button>
+                )}
               </div>
-            ) : (
+
               <div
                 style={{
-                  textAlign: "center",
-                  padding: "3rem 1rem",
-                  color: "#9ca3af",
+                  flex: 1,
+                  overflowY: "auto",
+                  padding: "1.5rem",
                 }}
               >
-                <div
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    margin: "0 auto 1rem",
-                    borderRadius: "50%",
-                    backgroundColor: "#f3f4f6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+                {selectedTextElement ? (
+                  <TextControls
+                    element={selectedTextElement}
+                    onUpdate={(updates) =>
+                      updateTextElement(selectedTextElement.id, updates)
+                    }
+                  />
+                ) : selectedImageElement ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "1rem",
+                    }}
                   >
-                    <path d="M12 2v20M2 12h20" />
-                  </svg>
-                </div>
-                <p
-                  style={{
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  No element selected
-                </p>
-                <p style={{ fontSize: "0.75rem" }}>
-                  Click on a text or image element in the canvas to edit its
-                  properties
-                </p>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "0.875rem",
+                          fontWeight: 600,
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        Width (px)
+                      </label>
+                      <input
+                        type="number"
+                        value={selectedImageElement.width}
+                        onChange={(e) =>
+                          updateImageElement(selectedImageElement.id, {
+                            width: parseInt(e.target.value) || 100,
+                          })
+                        }
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem 0.75rem",
+                          border: "2px solid #e5e7eb",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "0.875rem",
+                          fontWeight: 600,
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        Height (px)
+                      </label>
+                      <input
+                        type="number"
+                        value={selectedImageElement.height}
+                        onChange={(e) =>
+                          updateImageElement(selectedImageElement.id, {
+                            height: parseInt(e.target.value) || 100,
+                          })
+                        }
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem 0.75rem",
+                          border: "2px solid #e5e7eb",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        backgroundColor: "#eff6ff",
+                        padding: "0.75rem",
+                        borderRadius: "0.5rem",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "#1e40af",
+                          margin: 0,
+                        }}
+                      >
+                        💡 <strong>Tip:</strong> Use images with transparent
+                        backgrounds (PNG) for best results
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "3rem 1rem",
+                      color: "#9ca3af",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "48px",
+                        height: "48px",
+                        margin: "0 auto 1rem",
+                        borderRadius: "50%",
+                        backgroundColor: "#f3f4f6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M12 2v20M2 12h20" />
+                      </svg>
+                    </div>
+                    <p
+                      style={{
+                        fontSize: "0.875rem",
+                        fontWeight: 500,
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      No element selected
+                    </p>
+                    <p style={{ fontSize: "0.75rem" }}>
+                      Click on a text or image element in the canvas to edit its
+                      properties
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: "1.5rem",
+              }}
+            >
+              <BatchGenerator
+                template={template}
+                textElements={textElements}
+                imageElements={imageElements}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
