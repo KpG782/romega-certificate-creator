@@ -1,4 +1,4 @@
-// src/types/certificate.ts
+// src/types/certificates.ts (Updated)
 
 export interface Position {
   x: number;
@@ -15,6 +15,8 @@ export interface TextElement {
   fontWeight: "normal" | "bold";
   fontStyle: "normal" | "italic";
   textAlign: "left" | "center" | "right";
+  maxWidth?: number; // NEW: Optional bounding box width
+  showBoundingBox?: boolean; // NEW: Show visual guide in editor
 }
 
 export interface ImageElement {

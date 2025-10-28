@@ -1,4 +1,4 @@
-// src/lib/batch-generator.ts
+// src/lib/batch-generator.ts (Fixed to use element.maxWidth)
 import JSZip from "jszip";
 import { BatchRecipient, BatchProgress } from "@/types/batch";
 import {
@@ -21,14 +21,12 @@ export async function parseRecipientsFile(
         const content = event.target?.result as string;
         const data = JSON.parse(content);
 
-        // Validate structure
         if (!data.recipients || !Array.isArray(data.recipients)) {
           throw new Error(
             'Invalid JSON structure. Expected { "recipients": [...] }'
           );
         }
 
-        // Validate each recipient has at least a name
         const recipients = data.recipients.map(
           (recipient: any, index: number) => {
             if (!recipient.name || typeof recipient.name !== "string") {
@@ -71,12 +69,10 @@ export async function parseRecipientsFile(
 function replacePlaceholders(text: string, recipient: BatchRecipient): string {
   let result = text;
 
-  // Replace standard placeholders
   result = result.replace(/\{\{name\}\}/gi, recipient.name);
   result = result.replace(/\{\{title\}\}/gi, recipient.title || "");
   result = result.replace(/\{\{date\}\}/gi, recipient.date || "");
 
-  // Replace custom field placeholders
   if (recipient.customFields) {
     Object.entries(recipient.customFields).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, "gi");
@@ -97,6 +93,59 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     img.src = src;
+  });
+}
+
+/**
+ * FIXED: Draw text with smart centering and auto-scaling using element.maxWidth
+ */
+function drawSmartText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  element: TextElement,
+  templateWidth: number
+) {
+  // Set font properties
+  ctx.font = `${element.fontStyle} ${element.fontWeight} ${element.fontSize}px ${element.fontFamily}`;
+  ctx.fillStyle = element.color;
+  ctx.textBaseline = "top";
+
+  // Handle multi-line text
+  const lines = text.split("\n");
+
+  lines.forEach((line, lineIndex) => {
+    const y = element.position.y + lineIndex * element.fontSize * 1.2;
+
+    // Measure text width
+    const metrics = ctx.measureText(line);
+    const textWidth = metrics.width;
+
+    // FIXED: Use element.maxWidth if specified, otherwise fallback to 80% of template width
+    const maxWidth = element.maxWidth || templateWidth * 0.8;
+    let x = element.position.x;
+
+    if (element.textAlign === "center") {
+      // For center alignment, position.x is the center point
+      ctx.textAlign = "center";
+
+      // Auto-scale if text exceeds maxWidth
+      if (textWidth > maxWidth) {
+        ctx.save();
+        const scale = maxWidth / textWidth;
+        ctx.translate(x, y);
+        ctx.scale(scale, 1);
+        ctx.fillText(line, 0, 0);
+        ctx.restore();
+        return;
+      }
+    } else if (element.textAlign === "left") {
+      ctx.textAlign = "left";
+    } else if (element.textAlign === "right") {
+      ctx.textAlign = "right";
+    }
+
+    // Draw the text
+    ctx.fillText(line, x, y);
   });
 }
 
@@ -132,22 +181,10 @@ async function renderCertificate(
     );
   });
 
-  // Draw text elements with placeholders replaced
+  // FIXED: Draw text elements with smart rendering using element.maxWidth
   textElements.forEach((element) => {
     const text = replacePlaceholders(element.text, recipient);
-
-    // Set font properties
-    ctx.font = `${element.fontStyle} ${element.fontWeight} ${element.fontSize}px ${element.fontFamily}`;
-    ctx.fillStyle = element.color;
-    ctx.textAlign = element.textAlign as CanvasTextAlign;
-    ctx.textBaseline = "top";
-
-    // Calculate position
-    const x = element.position.x;
-    const y = element.position.y;
-
-    // Draw text
-    ctx.fillText(text, x, y);
+    drawSmartText(ctx, text, element, template.width);
   });
 }
 

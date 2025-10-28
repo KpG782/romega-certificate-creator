@@ -375,6 +375,73 @@ export default function TextControls({ element, onUpdate }: TextControlsProps) {
         </div>
       </div>
 
+      {/* Text Centering Options */}
+      {element.textAlign === "center" && (
+        <div className="flex flex-col gap-4 mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold mb-2 text-blue-900 dark:text-blue-100">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="12" y1="8" x2="12" y2="16" />
+              </svg>
+              Text Area Width (px)
+            </label>
+            <input
+              type="number"
+              value={
+                element.maxWidth || Math.round(element.position.x * 2 * 0.8)
+              }
+              onChange={(e) =>
+                onUpdate({ maxWidth: parseInt(e.target.value) || undefined })
+              }
+              placeholder="Auto"
+              className="w-full px-3 py-2 border-2 border-blue-200 dark:border-blue-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800"
+            />
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1 italic">
+              Maximum width for text. Names longer than this will auto-scale to
+              fit.
+            </p>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-blue-900 dark:text-blue-100">
+              <input
+                type="checkbox"
+                checked={element.showBoundingBox ?? false}
+                onChange={(e) =>
+                  onUpdate({ showBoundingBox: e.target.checked })
+                }
+                className="w-4 h-4"
+              />
+              Always show bounding box guide
+            </label>
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1 italic">
+              Keep the blue dashed box visible to see text centering area
+            </p>
+          </div>
+
+          <div className="bg-blue-100 dark:bg-blue-900/40 p-3 rounded-md">
+            <p className="text-xs text-blue-900 dark:text-blue-100 m-0 leading-relaxed">
+              <strong>📍 How it works:</strong>
+              <br />
+              • Position your text at the center point
+              <br />
+              • Set the total width for centering
+              <br />
+              • Short names get more space, long names auto-fit
+              <br />• Perfect for batch generation!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Live Preview */}
       <div className="mt-6 p-4 border-2 border-dashed rounded-lg bg-gray-50 dark:bg-zinc-800">
         <p className="text-xs font-semibold text-gray-500 mb-2">Preview:</p>

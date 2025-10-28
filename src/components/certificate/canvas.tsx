@@ -1,4 +1,4 @@
-// src/components/certificate/canvas.tsx
+// src/components/certificate/canvas.tsx (Fixed Centering)
 "use client";
 
 import { useRef, useState, useEffect } from "react";
@@ -117,7 +117,6 @@ export default function CertificateCanvas({
     return () => window.removeEventListener("resize", updateScale);
   }, [template.width]);
 
-  // Load and draw image helper
   const loadImage = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -141,18 +140,13 @@ export default function CertificateCanvas({
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Cannot get canvas context");
 
-      // Set canvas size
       canvas.width = template.width;
       canvas.height = template.height;
-
-      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw template background
       const templateImg = await loadImage(template.backgroundImage);
       ctx.drawImage(templateImg, 0, 0, template.width, template.height);
 
-      // Draw image elements
       for (const element of imageElements) {
         const img = await loadImage(element.src);
         ctx.drawImage(
@@ -164,22 +158,47 @@ export default function CertificateCanvas({
         );
       }
 
-      // Draw text elements
+      // FIXED: Smart text rendering with proper maxWidth usage
       textElements.forEach((element) => {
         ctx.font = `${element.fontStyle} ${element.fontWeight} ${element.fontSize}px ${element.fontFamily}`;
         ctx.fillStyle = element.color;
-        ctx.textAlign = element.textAlign as CanvasTextAlign;
         ctx.textBaseline = "top";
 
-        // Handle multi-line text
         const lines = element.text.split("\n");
+
         lines.forEach((line, index) => {
           const y = element.position.y + index * element.fontSize * 1.2;
-          ctx.fillText(line, element.position.x, y);
+          const metrics = ctx.measureText(line);
+          const textWidth = metrics.width;
+
+          // FIXED: Use element.maxWidth if specified
+          const maxWidth = element.maxWidth || template.width * 0.8;
+          let x = element.position.x;
+
+          if (element.textAlign === "center") {
+            ctx.textAlign = "center";
+
+            // Auto-scale if text exceeds maxWidth
+            if (textWidth > maxWidth) {
+              ctx.save();
+              const scale = maxWidth / textWidth;
+              ctx.translate(x, y);
+              ctx.scale(scale, 1);
+              ctx.fillText(line, 0, 0);
+              ctx.restore();
+            } else {
+              ctx.fillText(line, x, y);
+            }
+          } else if (element.textAlign === "left") {
+            ctx.textAlign = "left";
+            ctx.fillText(line, x, y);
+          } else if (element.textAlign === "right") {
+            ctx.textAlign = "right";
+            ctx.fillText(line, x, y);
+          }
         });
       });
 
-      // Download
       canvas.toBlob(
         (blob) => {
           if (blob) {
@@ -221,7 +240,6 @@ export default function CertificateCanvas({
         </Button>
       </div>
 
-      {/* Hidden canvas for rendering */}
       <canvas
         ref={canvasRef}
         style={{ display: "none" }}
@@ -263,35 +281,108 @@ export default function CertificateCanvas({
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
           }}
         >
-          {textElements.map((element) => (
-            <DraggableElement
-              key={element.id}
-              id={element.id}
-              position={element.position}
-              onDrag={(x, y) =>
-                onUpdateTextElement(element.id, { position: { x, y } })
-              }
-              onSelect={() => onSelectElement(element.id, "text")}
-              isSelected={selectedElement === element.id}
-            >
-              <div
-                style={{
-                  fontSize: `${element.fontSize}px`,
-                  fontFamily: element.fontFamily,
-                  color: element.color,
-                  fontWeight: element.fontWeight,
-                  fontStyle: element.fontStyle,
-                  textAlign: element.textAlign,
-                  userSelect: "none",
-                  whiteSpace: "pre-wrap",
-                  lineHeight: "1.2",
-                }}
-              >
-                {element.text}
-              </div>
-            </DraggableElement>
-          ))}
+          {/* Render text elements with bounding box guides */}
+          {textElements.map((element) => {
+            const isSelected = selectedElement === element.id;
+            const maxWidth = element.maxWidth || template.width * 0.8;
+            const showBox =
+              element.textAlign === "center" &&
+              (isSelected || element.showBoundingBox);
 
+            return (
+              <div key={element.id}>
+                {/* FIXED: Bounding box now properly centered */}
+                {showBox && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      // The box should be centered around position.x
+                      left: `${element.position.x}px`,
+                      top: `${element.position.y - 4}px`,
+                      width: `${maxWidth}px`,
+                      height: `${element.fontSize * 1.4}px`,
+                      border: "2px dashed #93c5fd",
+                      backgroundColor: "rgba(147, 197, 253, 0.1)",
+                      borderRadius: "4px",
+                      pointerEvents: "none",
+                      zIndex: 1,
+                      // Center the box itself
+                      transform: "translateX(-50%)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "-20px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        fontSize: "10px",
+                        color: "#3b82f6",
+                        backgroundColor: "white",
+                        padding: "2px 6px",
+                        borderRadius: "3px",
+                        border: "1px solid #93c5fd",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Text Area: {maxWidth}px
+                    </div>
+                  </div>
+                )}
+
+                {/* Actual draggable text element */}
+                <DraggableElement
+                  id={element.id}
+                  position={element.position}
+                  onDrag={(x, y) =>
+                    onUpdateTextElement(element.id, { position: { x, y } })
+                  }
+                  onSelect={() => onSelectElement(element.id, "text")}
+                  isSelected={isSelected}
+                >
+                  <div
+                    style={{
+                      fontSize: `${element.fontSize}px`,
+                      fontFamily: element.fontFamily,
+                      color: element.color,
+                      fontWeight: element.fontWeight,
+                      fontStyle: element.fontStyle,
+                      textAlign: element.textAlign,
+                      userSelect: "none",
+                      whiteSpace: "pre-wrap",
+                      lineHeight: "1.2",
+                      position: "relative",
+                      zIndex: 2,
+                      // Visual centering for centered text
+                      ...(element.textAlign === "center" && {
+                        transform: "translateX(-50%)",
+                      }),
+                    }}
+                  >
+                    {element.text}
+                  </div>
+                </DraggableElement>
+
+                {/* Center point indicator */}
+                {isSelected && element.textAlign === "center" && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: `${element.position.x - 1}px`,
+                      top: `${element.position.y}px`,
+                      width: "2px",
+                      height: `${element.fontSize * 1.2}px`,
+                      backgroundColor: "#3b82f6",
+                      pointerEvents: "none",
+                      zIndex: 3,
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+
+          {/* Image elements */}
           {imageElements.map((element) => (
             <DraggableElement
               key={element.id}
@@ -341,8 +432,9 @@ export default function CertificateCanvas({
         }}
       >
         <p style={{ fontSize: "0.75rem", color: "#1e40af", margin: 0 }}>
-          <strong>💡 Tips:</strong> Click and hold to drag • Click element to
-          edit • Click empty space to deselect • Download saves all changes
+          <strong>💡 Tips:</strong> Blue dashed box shows text centering area •
+          Blue line shows center point • Drag to reposition • Text will
+          auto-center and auto-scale within the box
         </p>
       </div>
     </div>
